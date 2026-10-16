@@ -268,7 +268,57 @@
     text-align: right;
     margin: 18px 0 0;
   }
+  .date-lettre {
+    text-align: right;
+    font-style: italic;
+    color: var(--encre-douce);
+    font-size: 17px;
+    margin: 0;
+  }
   .fermer { display: block; margin: 22px auto 0; }
+
+  /* ---------- Archives ---------- */
+  .rien { text-align: center; font-style: italic; color: var(--encre-douce); margin: 0; }
+  .archives { max-width: 34em; margin: 56px auto 0; }
+  .archives summary {
+    list-style: none;
+    cursor: pointer;
+    text-align: center;
+    font-family: var(--manuscrit);
+    font-size: 34px;
+    line-height: 1.2;
+  }
+  .archives summary::-webkit-details-marker { display: none; }
+  .archives summary::after { content: " ▾"; font-size: 20px; color: var(--encre-douce); }
+  .archives[open] summary::after { content: " ▴"; }
+  .compte { font-family: var(--serif); font-size: 18px; color: var(--encre-douce); }
+  .mois {
+    font-size: 18px;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--encre-douce);
+    margin: 28px 0 4px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(125, 90, 102, .3);
+  }
+  .liste-archives { list-style: none; padding: 0; margin: 0; }
+  .ligne {
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    text-align: left;
+    background: none;
+    border: 0;
+    border-bottom: 1px dotted rgba(125, 90, 102, .25);
+    padding: 11px 2px;
+    cursor: pointer;
+  }
+  .ligne .point { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--cire); align-self: center; }
+  .ligne.lue .point { background: transparent; }
+  .ligne .titre-ligne { flex: 1; }
+  .ligne .jour { flex: none; color: var(--encre-douce); font-size: 16px; }
+  .ligne:hover .titre-ligne, .ligne:focus-visible .titre-ligne { text-decoration: underline; text-underline-offset: 3px; }
 
   .probleme { max-width: 30em; margin: 0 auto; text-align: center; }
 
@@ -301,8 +351,15 @@
     <p class="intro" id="intro"></p>
   </header>
   <ul class="grille" id="grille"></ul>
+  <p class="rien" id="rien" hidden>Pas de nouveau mot pour l'instant. Les précédents t'attendent dans les archives.</p>
   <div class="actions">
     <button class="bouton" id="hasard" type="button">Un mot au hasard</button>
+  </div>
+  <details class="archives" id="archives" hidden>
+    <summary>Archives <span class="compte" id="nb-archives"></span></summary>
+    <div id="liste-archives"></div>
+  </details>
+  <div class="actions">
     <button class="lien" id="verrouiller" type="button">Verrouiller sur cet appareil</button>
   </div>
 </main>
@@ -316,6 +373,7 @@
     <h2 id="lettre-titre"></h2>
     <p class="texte" id="lettre-texte"></p>
     <p class="signe" id="lettre-signe"></p>
+    <p class="date-lettre" id="lettre-date"></p>
     <button class="bouton fermer" id="fermer" type="button">Refermer</button>
   </div>
 </dialog>
@@ -450,12 +508,25 @@
     }
   }
 
+  // Dates enregistrées au format AAAA-MM-JJ.
+  function versDate(s) {
+    var p = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || "");
+    return p ? new Date(+p[1], +p[2] - 1, +p[3]) : null;
+  }
+  function dateLongue(s) {
+    var d = versDate(s);
+    return d ? d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "";
+  }
+
   function construire() {
+    var msgs = contenu.messages || [];
     $("intro").textContent = contenu.intro || "";
     $("intro").hidden = !contenu.intro;
     var grille = $("grille");
     grille.textContent = "";
-    (contenu.messages || []).forEach(function (m, i) {
+    var archives = [];
+    msgs.forEach(function (m, i) {
+      if (m.archive) { archives.push(i); return; }
       var li = document.createElement("li");
       var b = document.createElement("button");
       b.type = "button";
@@ -478,7 +549,61 @@
       li.appendChild(b);
       grille.appendChild(li);
     });
-    $("hasard").hidden = !contenu.messages || contenu.messages.length < 2;
+    grille.hidden = !grille.children.length;
+    $("rien").hidden = grille.children.length > 0;
+    $("hasard").hidden = msgs.length < 2;
+    construireArchives(archives);
+  }
+
+  // Archives : du plus récent au plus ancien, regroupées par mois.
+  function construireArchives(indices) {
+    var msgs = contenu.messages;
+    var zone = $("archives"), liste = $("liste-archives");
+    liste.textContent = "";
+    zone.hidden = !indices.length;
+    if (!indices.length) return;
+    $("nb-archives").textContent = "(" + indices.length + ")";
+    if ($("grille").hidden) zone.open = true;
+    indices.sort(function (a, b) { return (msgs[b].date || "").localeCompare(msgs[a].date || ""); });
+    var moisCourant = null, ul = null;
+    indices.forEach(function (i) {
+      var m = msgs[i];
+      var d = versDate(m.date);
+      var mois = d ? m.date.slice(0, 7) : "";
+      if (mois !== moisCourant || !ul) {
+        moisCourant = mois;
+        var h = document.createElement("h3");
+        h.className = "mois";
+        var nom = d ? d.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }) : "Sans date";
+        h.textContent = nom.charAt(0).toUpperCase() + nom.slice(1);
+        ul = document.createElement("ul");
+        ul.className = "liste-archives";
+        liste.appendChild(h);
+        liste.appendChild(ul);
+      }
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "ligne" + (lus.indexOf(idDe(i)) >= 0 ? " lue" : "");
+      b.dataset.index = i;
+      var point = document.createElement("span");
+      point.className = "point";
+      point.setAttribute("aria-hidden", "true");
+      var t = document.createElement("span");
+      t.className = "titre-ligne";
+      t.textContent = m.titre || "Un mot pour toi";
+      b.appendChild(point);
+      b.appendChild(t);
+      if (d) {
+        var j = document.createElement("span");
+        j.className = "jour";
+        j.textContent = d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+        b.appendChild(j);
+      }
+      b.addEventListener("click", function () { lireMot(i); });
+      li.appendChild(b);
+      ul.appendChild(li);
+    });
   }
 
   // Chaque mot a un identifiant : un mot ajouté plus tard apparaît bien comme « non lu ».
@@ -493,14 +618,14 @@
     $("lettre-titre").textContent = m.titre || "";
     $("lettre-texte").textContent = m.texte || "";
     $("lettre-signe").textContent = contenu.de ? "— " + contenu.de : "";
+    $("lettre-date").textContent = dateLongue(m.date);
     var d = $("lettre");
     if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
     d.querySelector(".papier").scrollTop = 0;
     if (lus.indexOf(id) < 0) {
       lus.push(id);
       ecrire(CLE_LUS, JSON.stringify(lus));
-      var carte = document.querySelector('.carte[data-index="' + i + '"]');
-      if (carte) carte.classList.add("lue");
+      document.querySelectorAll('[data-index="' + i + '"]').forEach(function (el) { el.classList.add("lue"); });
     }
   }
 
