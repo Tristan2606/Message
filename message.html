@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Écrire les mots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fond: #f1d9da;
+    --papier: #fffaf6;
+    --encre: #3a1f2b;
+    --encre-douce: #7d5a66;
+    --cire: #9e1b32;
+    --trait: #e3c6c9;
+    --manuscrit: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+    --serif: "Cormorant Garamond", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--fond);
+    color: var(--encre);
+    font-family: var(--serif);
+    font-size: 19px;
+    line-height: 1.5;
+    padding: 40px 16px 80px;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--cire); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-family: var(--manuscrit); font-weight: 600; font-size: 50px; line-height: 1; margin: 0 0 8px; }
+  .chapeau { color: var(--encre-douce); margin: 0 0 32px; }
+  section {
+    background: var(--papier);
+    border-radius: 4px;
+    padding: 24px 22px;
+    margin-bottom: 22px;
+    box-shadow: 0 14px 30px -20px rgba(70, 20, 35, .5);
+  }
+  h2 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
+  .aide { color: var(--encre-douce); font-size: 17px; margin: 0 0 16px; }
+  .etiquette { display: block; font-weight: 600; margin: 14px 0 4px; }
+  input[type=text], input[type=url], textarea {
+    width: 100%;
+    border: 1px solid var(--trait);
+    border-radius: 3px;
+    background: #fff;
+    padding: 9px 11px;
+  }
+  textarea { min-height: 120px; resize: vertical; font-family: var(--manuscrit); font-size: 23px; line-height: 1.3; }
+  .forme { font-size: 16px; color: var(--encre-douce); margin: 6px 0 0; }
+  .forme code { font-family: inherit; font-weight: 600; color: var(--encre); }
+  .attention { color: var(--cire); }
+
+  .choix { display: grid; gap: 10px; margin-bottom: 8px; }
+  .option {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border: 1.5px solid var(--trait);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 17px;
+    color: var(--encre-douce);
+  }
+  .option strong { color: var(--encre); font-size: 19px; }
+  .option input { margin-top: 6px; accent-color: var(--cire); }
+  .option:has(input:checked) { border-color: var(--cire); background: #fff; }
+
+  .mot { border-top: 1px dashed var(--trait); padding-top: 16px; margin-top: 16px; }
+  .mot:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+  .mot-tete { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .mot-tete .etiquette { margin-top: 0; }
+  .mot-pied { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; margin-top: 10px; font-size: 17px; color: var(--encre-douce); }
+  .mot-pied label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .mot-pied input[type=date] { border: 1px solid var(--trait); border-radius: 3px; background: #fff; padding: 4px 8px; font-size: 16px; }
+  .mot-pied input[type=checkbox] { accent-color: var(--cire); width: 18px; height: 18px; }
+  #bloc-archives { margin-top: 26px; border-top: 1px solid var(--trait); padding-top: 14px; }
+  #bloc-archives summary { cursor: pointer; font-weight: 600; font-size: 21px; }
+  #bloc-archives[open] summary { margin-bottom: 16px; }
+  #nb-arch { font-weight: 500; color: var(--encre-douce); }
+  #liste-arch .mot { opacity: .85; }
+  .bouton {
+    border: 0;
+    background: var(--cire);
+    color: #fff4f4;
+    padding: 10px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .bouton.discret { background: transparent; color: var(--cire); border: 1.5px solid var(--cire); }
+  .lien { border: 0; background: none; padding: 2px; color: var(--encre-douce); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font-size: 16px; }
+  .rangee { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }
+  .message { margin: 14px 0 0; min-height: 1.4em; }
+  .message.erreur { color: var(--cire); }
+  .sortie { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; min-height: 160px; }
+  .fichier { font-size: 16px; }
+  #zone-lien { margin: 20px 0; padding: 16px; border: 1.5px solid var(--cire); border-radius: 4px; background: #fff; }
+  #zone-lien .etiquette { margin-top: 0; }
+  #lien-final { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; line-height: 1.4; min-height: 0; resize: none; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Écrire les mots</h1>
+  <p class="chapeau">Cette page reste sur ton ordinateur. Elle chiffre tes mots et te donne un fichier <strong>messages.js</strong> à mettre sur GitHub, à côté de index.html.</p>
+
+  <section>
+    <h2>Reprendre des mots déjà écrits</h2>
+    <p class="aide">Pour ajouter ou modifier des mots plus tard, choisis ton messages.js actuel.</p>
+    <input class="fichier" id="importer" type="file" accept=".js,text/javascript,application/javascript">
+    <div id="zone-deverrouiller" hidden>
+      <label class="etiquette" for="cle-reprise" id="label-reprise">La réponse à ta question</label>
+      <input type="text" id="cle-reprise" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="rangee"><button class="bouton discret" id="deverrouiller" type="button">Déverrouiller</button></div>
+    </div>
+    <p class="message" id="msg-reprendre"></p>
+  </section>
+
+  <section>
+    <h2>La page</h2>
+    <label class="etiquette" for="pour">Pour</label>
+    <input type="text" id="pour" placeholder="Son prénom ou un surnom">
+    <label class="etiquette" for="de">Signé</label>
+    <input type="text" id="de" placeholder="Ton prénom">
+    <label class="etiquette" for="intro">Petit mot d'accueil (facultatif)</label>
+    <textarea id="intro" placeholder="Ce qui s'affiche au-dessus des enveloppes"></textarea>
+  </section>
+
+  <section>
+    <h2>Comment ouvrir la page</h2>
+    <p class="aide">Dans les deux cas, tes mots restent illisibles pour quelqu'un qui tomberait sur ton dépôt GitHub.</p>
+    <div class="choix">
+      <label class="option"><input type="radio" name="mode" value="question" checked>
+        <span><strong>Avec une question</strong><br>Il faut donner la bonne réponse pour lire les mots.</span></label>
+      <label class="option"><input type="radio" name="mode" value="lien">
+        <span><strong>Avec un lien secret, sans question</strong><br>La clé est cachée dans le lien que tu envoies : il suffit de cliquer dessus.</span></label>
+    </div>
+
+    <div id="bloc-question">
+      <p class="aide" style="margin-top:14px">Choisis une réponse que vous êtes seuls à connaître, idéalement un mot ou deux. Les majuscules, accents, espaces et la ponctuation sont ignorés.</p>
+      <label class="etiquette" for="question">Question</label>
+      <input type="text" id="question" placeholder="Où s'est-on embrassés pour la première fois ?">
+      <label class="etiquette" for="reponse">Réponse</label>
+      <input type="text" id="reponse" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <p class="forme" id="forme"></p>
+      <label class="etiquette" for="indice">Indice (facultatif)</label>
+      <input type="text" id="indice" placeholder="Il pleuvait…">
+    </div>
+
+    <div id="bloc-lien" hidden>
+      <label class="etiquette" for="adresse">Adresse de ta page GitHub (facultatif)</label>
+      <input type="url" id="adresse" placeholder="https://ton-pseudo.github.io/nom-du-depot/" autocapitalize="off" spellcheck="false">
+      <p class="forme">Sert seulement à te donner le lien complet, prêt à envoyer.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Les mots</h2>
+    <p class="aide">Chaque mot devient une enveloppe. Quand tu en écris de nouveaux, range les anciens dans les archives : elle pourra toujours les relire, classés par mois, sous les enveloppes.</p>
+    <div id="liste"></div>
+    <div class="rangee">
+      <button class="bouton discret" id="ajouter" type="button">Ajouter un mot</button>
+      <button class="lien" id="tout-archiver" type="button">Ranger tous ces mots dans les archives</button>
+    </div>
+    <details id="bloc-archives" hidden>
+      <summary>Archives <span id="nb-arch"></span></summary>
+      <div id="liste-arch"></div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Créer le fichier</h2>
+    <p class="aide">Télécharge messages.js, puis remplace l'ancien dans ton dépôt GitHub. Tu peux aussi copier le contenu et le coller dans messages.js directement sur GitHub.</p>
+    <div class="rangee">
+      <button class="bouton" id="creer" type="button">Créer messages.js</button>
+    </div>
+    <p class="message" id="msg-creer" role="status"></p>
+
+    <div id="zone-lien" hidden>
+      <label class="etiquette" for="lien-final">Le lien à lui envoyer</label>
+      <textarea id="lien-final" readonly rows="2"></textarea>
+      <p class="forme" id="note-lien"></p>
+      <p class="forme attention">Garde ce lien : c'est la seule clé. Il te servira aussi pour ajouter des mots plus tard. Ne le publie pas sur GitHub.</p>
+      <div class="rangee"><button class="bouton" id="copier-lien" type="button">Copier le lien</button></div>
+    </div>
+
+    <div id="zone-sortie" hidden>
+      <textarea class="sortie" id="sortie" readonly aria-label="Contenu de messages.js"></textarea>
+      <div class="rangee"><button class="bouton discret" id="copier" type="button">Copier le contenu</button></div>
+    </div>
+  </section>
+</main>
+
+<!-- Si cette page est dans le même dossier qu'un messages.js, on le propose à la reprise. -->
+<script src="messages.js" onerror="window.DONNEES = null"></script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var ITERATIONS = 250000;
+  var ADRESSE_EXEMPLE = "https://ton-pseudo.github.io/nom-du-depot/";
+  var existant = null; // données chiffrées importées
+  var cleLien = null;  // clé du lien secret, gardée pour que le lien déjà envoyé continue de marcher
+
+  function normaliser(s) {
+    return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+  function cleDepuisLien(s) {
+    var t = String(s || "").trim();
+    var i = t.lastIndexOf("#");
+    if (i >= 0) t = t.slice(i + 1);
+    try { t = decodeURIComponent(t); } catch (e) {}
+    return normaliser(t.replace(/^k=/, ""));
+  }
+  function genererCle() {
+    var alphabet = "abcdefghijklmnopqrstuvwxyz0123456789", cle = "";
+    while (cle.length < 24) {
+      var o = crypto.getRandomValues(new Uint8Array(32));
+      for (var i = 0; i < o.length && cle.length < 24; i++) if (o[i] < 252) cle += alphabet[o[i] % 36];
+    }
+    return cle;
+  }
+  function versB64(o) {
+    var s = "";
+    for (var i = 0; i < o.length; i += 0x8000) s += String.fromCharCode.apply(null, o.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function depuisB64(b) {
+    var s = atob(b), o = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i);
+    return o;
+  }
+  function nouvelId() {
+    return Array.from(crypto.getRandomValues(new Uint8Array(5)), function (x) { return x.toString(16).padStart(2, "0"); }).join("");
+  }
+  async function cleDepuis(secret, sel, iterations, usage) {
+    var base = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt: sel, iterations: iterations, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, [usage]);
+  }
+  function copier(champ, bouton, texteBouton) {
+    var ok = function () { bouton.textContent = "Copié"; setTimeout(function () { bouton.textContent = texteBouton; }, 1500); };
+    var secours = function () { champ.select(); document.execCommand("copy"); ok(); };
+    if (navigator.clipboard) navigator.clipboard.writeText(champ.value).then(ok, secours); else secours();
+  }
+
+  // ---------- Mode d'ouverture ----------
+  function mode() { return document.querySelector('input[name="mode"]:checked').value; }
+  function majMode() {
+    var lien = mode() === "lien";
+    $("bloc-question").hidden = lien;
+    $("bloc-lien").hidden = !lien;
+  }
+  function choisirMode(m) {
+    document.querySelector('input[name="mode"][value="' + m + '"]').checked = true;
+    majMode();
+  }
+  document.querySelectorAll('input[name="mode"]').forEach(function (r) { r.addEventListener("change", majMode); });
+
+  // ---------- Liste des mots ----------
+  function aujourdhui() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function majArchives() {
+    var n = $("liste-arch").children.length;
+    $("bloc-archives").hidden = !n;
+    $("nb-arch").textContent = "(" + n + ")";
+    $("tout-archiver").hidden = !$("liste").children.length;
+  }
+  // Place un mot dans la liste des enveloppes ou dans les archives selon sa case.
+  function placer(bloc) {
+    var archive = bloc.querySelector(".m-archive").checked;
+    (archive ? $("liste-arch") : $("liste")).appendChild(bloc);
+    majArchives();
+  }
+  // m : { titre, texte, id, date, archive } ; sans argument, un nouveau mot daté d'aujourd'hui.
+  function ajouterMot(m) {
+    m = m || { date: aujourdhui() };
+    var bloc = document.createElement("div");
+    bloc.className = "mot";
+    bloc.dataset.id = m.id || nouvelId();
+    var idT = "titre-" + bloc.dataset.id, idX = "texte-" + bloc.dataset.id;
+    bloc.innerHTML =
+      '<div class="mot-tete"><label class="etiquette" for="' + idT + '">Titre de l\'enveloppe</label>' +
+      '<button class="lien retirer" type="button">Retirer</button></div>' +
+      '<input type="text" class="m-titre" id="' + idT + '" placeholder="Ouvre quand tu as besoin de sourire">' +
+      '<label class="etiquette" for="' + idX + '">Le mot</label>' +
+      '<textarea class="m-texte" id="' + idX + '"></textarea>' +
+      '<div class="mot-pied">' +
+      '<label>Date <input type="date" class="m-date"></label>' +
+      '<label><input type="checkbox" class="m-archive"> Dans les archives</label>' +
+      '</div>';
+    var champTexte = bloc.querySelector(".m-texte");
+    bloc.querySelector(".m-titre").value = m.titre || "";
+    champTexte.value = m.texte || "";
+    bloc.querySelector(".m-date").value = m.date || "";
+    bloc.querySelector(".m-archive").checked = !!m.archive;
+    bloc.querySelector(".m-archive").addEventListener("change", function () { placer(bloc); });
+    bloc.querySelector(".retirer").addEventListener("click", function () {
+      if (champTexte.value.trim() && !confirm("Retirer ce mot ? Il disparaîtra aussi des archives.")) return;
+      bloc.remove();
+      majArchives();
+    });
+    placer(bloc);
+    return bloc;
+  }
+  function lireMots() {
+    return Array.from(document.querySelectorAll("#liste .mot, #liste-arch .mot")).map(function (b) {
+      var m = { id: b.dataset.id, titre: b.querySelector(".m-titre").value.trim(), texte: b.querySelector(".m-texte").value.replace(/\s+$/, "") };
+      var date = b.querySelector(".m-date").value;
+      if (date) m.date = date;
+      if (b.querySelector(".m-archive").checked) m.archive = true;
+      return m;
+    }).filter(function (m) { return m.texte; });
+  }
+  function viderMots() {
+    $("liste").textContent = "";
+    $("liste-arch").textContent = "";
+    majArchives();
+  }
+  $("tout-archiver").addEventListener("click", function () {
+    Array.from($("liste").children).forEach(function (b) {
+      if (!b.querySelector(".m-texte").value.trim()) { b.remove(); return; }
+      b.querySelector(".m-archive").checked = true;
+      placer(b);
+    });
+    $("bloc-archives").open = true;
+    ajouterMot().querySelector(".m-titre").focus();
+  });
+
+  // ---------- Aperçu de la réponse ----------
+  function majForme() {
+    var n = normaliser($("reponse").value);
+    var p = $("forme");
+    p.className = "forme";
+    if (!$("reponse").value) { p.textContent = ""; return; }
+    if (!n) { p.textContent = "La réponse doit contenir au moins une lettre ou un chiffre."; p.className = "forme attention"; return; }
+    p.innerHTML = "Sera acceptée sous la forme : <code></code>";
+    p.querySelector("code").textContent = n;
+    if (n.length < 4) {
+      p.className = "forme attention";
+      p.appendChild(document.createTextNode(" — réponse très courte, donc facile à deviner."));
+    }
+  }
+  $("reponse").addEventListener("input", majForme);
+
+  // ---------- Reprise d'un fichier existant ----------
+  function proposerReprise(d, source) {
+    var msg = $("msg-reprendre");
+    if (!d || !d.chiffre || !d.sel || !d.iv) {
+      msg.className = "message erreur";
+      msg.textContent = "Ce fichier ne ressemble pas à un messages.js créé par cette page.";
+      return;
+    }
+    existant = d;
+    var lien = d.mode === "lien";
+    choisirMode(lien ? "lien" : "question");
+    $("pour").value = d.pour || "";
+    if (!lien) {
+      $("question").value = d.question || "";
+      $("indice").value = d.indice || "";
+    }
+    $("label-reprise").textContent = lien ? "Ton lien secret (ou juste la clé après le #)" : "La réponse à ta question";
+    $("cle-reprise").value = "";
+    $("zone-deverrouiller").hidden = false;
+    msg.className = "message";
+    msg.textContent = source + (lien ? " Colle ton lien secret pour retrouver tes mots." : " Écris la réponse pour retrouver tes mots.");
+  }
+  if (window.DONNEES && window.DONNEES.chiffre) {
+    proposerReprise(window.DONNEES, "Un messages.js a été trouvé à côté de cette page.");
+  }
+  $("importer").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    f.text().then(function (t) {
+      var d = null;
+      try { d = JSON.parse(t.slice(t.indexOf("{"), t.lastIndexOf("}") + 1)); } catch (e) {}
+      proposerReprise(d, "Fichier chargé.");
+    });
+  });
+  $("deverrouiller").addEventListener("click", async function () {
+    var msg = $("msg-reprendre");
+    var brut = $("cle-reprise").value;
+    var lien = existant.mode === "lien";
+    var secret = lien ? cleDepuisLien(brut) : normaliser(brut);
+    if (!secret) {
+      msg.className = "message erreur";
+      msg.textContent = lien ? "Colle d'abord ton lien secret." : "Écris d'abord la réponse.";
+      $("cle-reprise").focus();
+      return;
+    }
+    this.disabled = true;
+    try {
+      var cle = await cleDepuis(secret, depuisB64(existant.sel), existant.iterations || ITERATIONS, "decrypt");
+      var clair = await crypto.subtle.decrypt({ name: "AES-GCM", iv: depuisB64(existant.iv) }, cle, depuisB64(existant.chiffre));
+      var c = JSON.parse(new TextDecoder().decode(clair));
+      if (lien) {
+        cleLien = secret;
+        var base = brut.trim().split("#")[0];
+        if (/^https?:\/\//.test(base)) $("adresse").value = base;
+      } else {
+        $("reponse").value = brut;
+        majForme();
+      }
+      $("de").value = c.de || "";
+      $("intro").value = c.intro || "";
+      viderMots();
+      (c.messages || []).forEach(function (m) { ajouterMot(m); });
+      if (!$("liste").children.length) ajouterMot();
+      msg.className = "message";
+      msg.textContent = (c.messages || []).length + " mot(s) récupéré(s). Modifie ce que tu veux, puis crée le nouveau fichier.";
+    } catch (e) {
+      msg.className = "message erreur";
+      msg.textContent = lien ? "Ce lien ne correspond pas à ce fichier." : "Ce n'est pas la bonne réponse pour ce fichier.";
+    } finally {
+      this.disabled = false;
+    }
+  });
+
+  // ---------- Création du fichier ----------
+  $("ajouter").addEventListener("click", function () {
+    ajouterMot().querySelector(".m-titre").focus();
+  });
+
+  $("creer").addEventListener("click", async function () {
+    var msg = $("msg-creer");
+    msg.className = "message erreur";
+    var m = mode();
+    var mots = lireMots();
+    var question = $("question").value.trim();
+    var secret;
+    if (m === "question") {
+      secret = normaliser($("reponse").value);
+      if (!question) { msg.textContent = "Écris la question."; $("question").focus(); return; }
+      if (!secret) { msg.textContent = "Écris la réponse (au moins une lettre ou un chiffre)."; $("reponse").focus(); return; }
+    } else {
+      // On garde la même clé tant qu'on en a une : le lien déjà envoyé continue de marcher.
+      secret = cleLien || genererCle();
+    }
+    if (!mots.length) { msg.textContent = "Écris au moins un mot."; return; }
+
+    this.disabled = true;
+    msg.className = "message";
+    msg.textContent = "Chiffrement…";
+    try {
+      // Même sel en cas de reprise : la personne garde ses enveloppes « déjà lues ».
+      var sel = existant ? depuisB64(existant.sel) : crypto.getRandomValues(new Uint8Array(16));
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      var cle = await cleDepuis(secret, sel, ITERATIONS, "encrypt");
+      var contenu = { de: $("de").value.trim(), intro: $("intro").value.trim(), messages: mots };
+      var chiffre = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, cle, new TextEncoder().encode(JSON.stringify(contenu)));
+      var donnees = {
+        version: 1,
+        mode: m,
+        pour: $("pour").value.trim(),
+        question: m === "question" ? question : "",
+        indice: m === "question" ? $("indice").value.trim() : "",
+        iterations: ITERATIONS,
+        sel: versB64(sel),
+        iv: versB64(iv),
+        chiffre: versB64(new Uint8Array(chiffre))
+      };
+      var texte = "// Créé avec creer.html. Les mots sont chiffrés : sans la clé, ils sont illisibles.\n" +
+        "window.DONNEES = " + JSON.stringify(donnees, null, 2) + ";\n";
+      existant = donnees;
+
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([texte], { type: "text/javascript" }));
+      a.download = "messages.js";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      if (m === "lien") {
+        cleLien = secret;
+        var adresse = $("adresse").value.trim().split("#")[0];
+        $("lien-final").value = (adresse || ADRESSE_EXEMPLE) + "#" + secret;
+        $("note-lien").textContent = adresse ? "" : "Remplace le début par l'adresse de ta page, en gardant tout ce qui suit le #.";
+        $("zone-lien").hidden = false;
+      } else {
+        $("zone-lien").hidden = true;
+      }
+      $("sortie").value = texte;
+      $("zone-sortie").hidden = false;
+      msg.textContent = "messages.js créé avec " + mots.length + " mot(s). Mets-le dans ton dépôt à la place de l'ancien.";
+    } catch (e) {
+      msg.className = "message erreur";
+      msg.textContent = "Le chiffrement a échoué dans ce navigateur. Essaie avec Chrome, Firefox ou Safari récent.";
+    } finally {
+      this.disabled = false;
+    }
+  });
+
+  $("copier").addEventListener("click", function () { copier($("sortie"), this, "Copier le contenu"); });
+  $("copier-lien").addEventListener("click", function () { copier($("lien-final"), this, "Copier le lien"); });
+
+  window.addEventListener("beforeunload", function (e) {
+    if (lireMots().length && $("zone-sortie").hidden) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  if (!window.crypto || !crypto.subtle) {
+    $("msg-creer").className = "message erreur";
+    $("msg-creer").textContent = "Ce navigateur ne permet pas le chiffrement ici. Ouvre la page dans Chrome, Firefox ou Safari récent.";
+  }
+  majMode();
+  ajouterMot();
+})();
+</script>
+</body>
+</html>
