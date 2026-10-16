@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Des mots pour toi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fond: #f1d9da;          /* rose poudré */
+    --fond-2: #e9c9cb;
+    --papier: #fffaf6;        /* papier à lettre */
+    --enveloppe: #f6ebe2;
+    --rabat: #ecdccf;
+    --encre: #3a1f2b;         /* encre aubergine */
+    --encre-douce: #7d5a66;
+    --cire: #9e1b32;          /* cire rouge */
+    --cire-claire: #c98f98;
+    --ombre: 0 18px 40px -18px rgba(70, 20, 35, .45);
+    --manuscrit: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+    --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--fond);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,.45), transparent 40%),
+      radial-gradient(circle at 85% 90%, var(--fond-2), transparent 45%);
+    color: var(--encre);
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--cire); outline-offset: 3px; }
+  [hidden] { display: none !important; }
+
+  .ecran { min-height: 100vh; min-height: 100dvh; padding: 48px 16px; }
+
+  /* ---------- Écran verrouillé : l'enveloppe scellée ---------- */
+  #verrou { display: grid; place-items: center; }
+  .scellee {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--enveloppe);
+    border-radius: 4px;
+    box-shadow: var(--ombre);
+    perspective: 900px;
+  }
+  .rabat {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 128px;
+    background: var(--rabat);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform-origin: top center;
+    transition: transform .8s cubic-bezier(.6, 0, .3, 1);
+    z-index: 2;
+  }
+  .sceau {
+    position: absolute;
+    left: 50%;
+    top: 128px;
+    width: 52px;
+    height: 52px;
+    margin: -26px 0 0 -26px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #c43a4f, var(--cire) 60%, #7a1226);
+    box-shadow: 0 3px 8px rgba(80, 10, 25, .4), inset 0 0 0 4px rgba(255,255,255,.08);
+    display: grid;
+    place-items: center;
+    color: #f4c9cf;
+    font-size: 22px;
+    z-index: 3;
+    transition: transform .5s ease, opacity .5s ease;
+  }
+  .face {
+    position: relative;
+    padding: 172px 28px 32px;
+    text-align: center;
+  }
+  .destinataire {
+    font-family: var(--manuscrit);
+    font-size: 40px;
+    line-height: 1.1;
+    margin: 0 0 18px;
+  }
+  .question {
+    display: block;
+    font-style: italic;
+    color: var(--encre-douce);
+    margin-bottom: 14px;
+  }
+  .champ {
+    width: 100%;
+    border: 0;
+    border-bottom: 1.5px solid var(--encre-douce);
+    background: transparent;
+    padding: 8px 4px;
+    text-align: center;
+    font-family: var(--manuscrit);
+    font-size: 30px;
+    border-radius: 0;
+  }
+  .champ:focus { outline: none; border-bottom-color: var(--cire); }
+  .bouton {
+    margin-top: 22px;
+    border: 0;
+    background: var(--cire);
+    color: #fff4f4;
+    padding: 10px 30px;
+    border-radius: 999px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    cursor: pointer;
+  }
+  .bouton:disabled { opacity: .6; cursor: wait; }
+  .lien {
+    border: 0;
+    background: none;
+    padding: 4px;
+    color: var(--encre-douce);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    font-size: 17px;
+  }
+  .erreur { min-height: 1.5em; margin: 14px 0 4px; color: var(--cire); font-size: 17px; }
+  .indice { margin: 6px 0 0; font-style: italic; color: var(--encre-douce); }
+  .secoue { animation: secoue .4s; }
+  @keyframes secoue {
+    20%, 60% { transform: translateX(-7px); }
+    40%, 80% { transform: translateX(7px); }
+  }
+
+  /* Ouverture : le rabat se soulève, le sceau saute */
+  .scellee.ouverte .rabat { transform: rotateX(180deg); }
+  .scellee.ouverte .sceau { transform: scale(1.4) rotate(-20deg); opacity: 0; }
+  #verrou.part { opacity: 0; transition: opacity .5s ease .7s; }
+
+  /* ---------- Écran des mots ---------- */
+  #mots { max-width: 760px; margin: 0 auto; animation: apparait .7s ease; }
+  @keyframes apparait { from { opacity: 0; } to { opacity: 1; } }
+  .entete { text-align: center; margin-bottom: 36px; }
+  .entete h1 {
+    font-family: var(--manuscrit);
+    font-weight: 600;
+    font-size: 54px;
+    line-height: 1;
+    margin: 0 0 14px;
+  }
+  .intro {
+    max-width: 34em;
+    margin: 0 auto;
+    white-space: pre-wrap;
+    font-style: italic;
+    color: var(--encre-douce);
+  }
+  .grille {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 30px 22px;
+  }
+  .carte {
+    width: 100%;
+    border: 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: center;
+  }
+  .mini {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    background: var(--enveloppe);
+    border-radius: 3px;
+    box-shadow: var(--ombre);
+    overflow: hidden;
+    transition: transform .25s ease;
+  }
+  .mini::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 58%;
+    background: var(--rabat);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .mini-sceau {
+    position: absolute;
+    left: 50%;
+    top: 58%;
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #c43a4f, var(--cire) 60%, #7a1226);
+    color: #f4c9cf;
+    font-size: 13px;
+    display: grid;
+    place-items: center;
+  }
+  .carte:hover .mini, .carte:focus-visible .mini { transform: translateY(-4px) rotate(-1deg); }
+  .carte.lue .mini-sceau { background: var(--cire-claire); }
+  .carte.lue .mini { opacity: .78; }
+  .titre-carte {
+    display: block;
+    margin-top: 12px;
+    font-family: var(--manuscrit);
+    font-size: 24px;
+    line-height: 1.15;
+  }
+  .actions { text-align: center; margin-top: 44px; display: grid; gap: 14px; justify-items: center; }
+
+  /* ---------- La lettre ouverte ---------- */
+  dialog {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--encre);
+    width: min(560px, calc(100% - 32px));
+    max-height: calc(100dvh - 48px);
+    overflow: visible;
+  }
+  dialog::backdrop { background: rgba(58, 31, 43, .55); }
+  dialog[open] .papier { animation: deplie .45s cubic-bezier(.2, .8, .3, 1); }
+  @keyframes deplie {
+    from { opacity: 0; transform: translateY(24px) scaleY(.92); }
+    to { opacity: 1; transform: none; }
+  }
+  .papier {
+    background: var(--papier);
+    border-radius: 3px;
+    box-shadow: 0 30px 60px -20px rgba(30, 5, 15, .6);
+    padding: 34px 30px 26px;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+  }
+  .papier h2 {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 22px;
+    color: var(--encre-douce);
+    margin: 0 0 16px;
+  }
+  .texte {
+    font-family: var(--manuscrit);
+    font-size: 27px;
+    line-height: 38px;
+    white-space: pre-wrap;
+    margin: 0;
+  }
+  .signe {
+    font-family: var(--manuscrit);
+    font-size: 27px;
+    text-align: right;
+    margin: 18px 0 0;
+  }
+  .fermer { display: block; margin: 22px auto 0; }
+
+  .probleme { max-width: 30em; margin: 0 auto; text-align: center; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<main id="verrou" class="ecran">
+  <div class="scellee" id="scellee">
+    <div class="rabat" aria-hidden="true"></div>
+    <div class="sceau" aria-hidden="true">♥</div>
+    <form class="face" id="formulaire" autocomplete="off">
+      <p class="destinataire">Pour <span id="pour"></span></p>
+      <label class="question" for="reponse" id="question"></label>
+      <input class="champ" id="reponse" type="text" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+      <button class="bouton" id="ouvrir" type="submit">Ouvrir</button>
+      <p class="erreur" id="erreur" role="alert"></p>
+      <button class="lien" id="voir-indice" type="button" hidden>Un indice ?</button>
+      <p class="indice" id="indice" hidden></p>
+    </form>
+  </div>
+</main>
+
+<main id="mots" class="ecran" hidden>
+  <header class="entete">
+    <h1>Pour <span id="pour-2"></span></h1>
+    <p class="intro" id="intro"></p>
+  </header>
+  <ul class="grille" id="grille"></ul>
+  <div class="actions">
+    <button class="bouton" id="hasard" type="button">Un mot au hasard</button>
+    <button class="lien" id="verrouiller" type="button">Verrouiller sur cet appareil</button>
+  </div>
+</main>
+
+<main id="probleme" class="ecran" hidden>
+  <p class="probleme" id="probleme-texte"></p>
+</main>
+
+<dialog id="lettre" aria-labelledby="lettre-titre">
+  <div class="papier">
+    <h2 id="lettre-titre"></h2>
+    <p class="texte" id="lettre-texte"></p>
+    <p class="signe" id="lettre-signe"></p>
+    <button class="bouton fermer" id="fermer" type="button">Refermer</button>
+  </div>
+</dialog>
+
+<script src="messages.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = window.DONNEES;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function probleme(texte) {
+    $("verrou").hidden = true;
+    $("probleme").hidden = false;
+    $("probleme-texte").textContent = texte;
+  }
+
+  if (!D || !D.chiffre) {
+    probleme("Le fichier messages.js est introuvable. Il doit être placé dans le même dossier que cette page.");
+    return;
+  }
+  if (!window.crypto || !window.crypto.subtle) {
+    probleme("Ce navigateur ne peut pas ouvrir les messages ici. Ouvre la page depuis son adresse en https:// (GitHub Pages).");
+    return;
+  }
+
+  // Même règle que dans creer.html : on ignore majuscules, accents, espaces et ponctuation.
+  function normaliser(s) {
+    return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+  function b64(b) {
+    var s = atob(b), o = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i);
+    return o;
+  }
+  async function dechiffrer(reponse) {
+    var base = await crypto.subtle.importKey("raw", new TextEncoder().encode(reponse), "PBKDF2", false, ["deriveKey"]);
+    var cle = await crypto.subtle.deriveKey(
+      { name: "PBKDF2", salt: b64(D.sel), iterations: D.iterations, hash: "SHA-256" },
+      base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    var clair = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(D.iv) }, cle, b64(D.chiffre));
+    return JSON.parse(new TextDecoder().decode(clair));
+  }
+
+  // Petit stockage local (peut être indisponible : navigation privée, etc.)
+  var CLE_REPONSE = "mots-reponse-" + D.sel.slice(0, 12);
+  var CLE_LUS = "mots-lus-" + D.sel.slice(0, 12);
+  function lire(cle) { try { return localStorage.getItem(cle); } catch (e) { return null; } }
+  function ecrire(cle, val) { try { localStorage.setItem(cle, val); } catch (e) {} }
+  function effacer(cle) { try { localStorage.removeItem(cle); } catch (e) {} }
+
+  // Deux façons d'ouvrir : une question, ou un lien secret (la clé est après le # de l'adresse).
+  var modeLien = D.mode === "lien";
+  function cleDuLien() {
+    var h = location.hash.replace(/^#/, "");
+    try { h = decodeURIComponent(h); } catch (e) {}
+    return normaliser(h.replace(/^k=/, ""));
+  }
+  var TEXTES = modeLien ? {
+    vide: "Ce lien est incomplet. Ouvre exactement le lien qu'on t'a envoyé.",
+    faux: "Ce lien ne correspond pas à ces mots. Ouvre exactement le lien qu'on t'a envoyé."
+  } : {
+    vide: "Écris ta réponse dans le champ.",
+    faux: "Ce n'est pas la bonne réponse. Les majuscules, les accents et les espaces ne comptent pas."
+  };
+
+  $("pour").textContent = D.pour || "toi";
+  $("pour-2").textContent = D.pour || "toi";
+  $("question").textContent = D.question || "Quelle est la réponse ?";
+  if (modeLien) {
+    $("question").hidden = true;
+    $("reponse").hidden = true;
+    $("verrouiller").hidden = true;
+  }
+  if (D.indice && !modeLien) {
+    $("voir-indice").hidden = false;
+    $("indice").textContent = D.indice;
+    $("voir-indice").addEventListener("click", function () {
+      $("voir-indice").hidden = true;
+      $("indice").hidden = false;
+    });
+  }
+
+  var contenu = null;
+  var lus = [];
+  try { lus = JSON.parse(lire(CLE_LUS) || "[]"); } catch (e) { lus = []; }
+
+  async function tenter(reponse, auto) {
+    var bouton = $("ouvrir");
+    if (!reponse) {
+      $("erreur").textContent = TEXTES.vide;
+      return;
+    }
+    bouton.disabled = true;
+    bouton.textContent = "Ouverture…";
+    $("erreur").textContent = "";
+    try {
+      contenu = await dechiffrer(reponse);
+      ecrire(CLE_REPONSE, reponse);
+      ouvrir(!auto);
+    } catch (e) {
+      if (auto) {
+        effacer(CLE_REPONSE);
+      } else {
+        $("erreur").textContent = TEXTES.faux;
+        var env = $("scellee");
+        env.classList.remove("secoue");
+        void env.offsetWidth;
+        env.classList.add("secoue");
+      }
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = "Ouvrir";
+    }
+  }
+
+  function ouvrir(anime) {
+    construire();
+    var montrer = function () {
+      $("verrou").hidden = true;
+      $("mots").hidden = false;
+      window.scrollTo(0, 0);
+    };
+    var reduit = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (anime && !reduit) {
+      $("scellee").classList.add("ouverte");
+      $("verrou").classList.add("part");
+      setTimeout(montrer, 1250);
+    } else {
+      montrer();
+    }
+  }
+
+  function construire() {
+    $("intro").textContent = contenu.intro || "";
+    $("intro").hidden = !contenu.intro;
+    var grille = $("grille");
+    grille.textContent = "";
+    (contenu.messages || []).forEach(function (m, i) {
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "carte" + (lus.indexOf(idDe(i)) >= 0 ? " lue" : "");
+      b.dataset.index = i;
+      var mini = document.createElement("span");
+      mini.className = "mini";
+      mini.style.display = "block";
+      var sceau = document.createElement("span");
+      sceau.className = "mini-sceau";
+      sceau.setAttribute("aria-hidden", "true");
+      sceau.textContent = "♥";
+      mini.appendChild(sceau);
+      var t = document.createElement("span");
+      t.className = "titre-carte";
+      t.textContent = m.titre || "Un mot pour toi";
+      b.appendChild(mini);
+      b.appendChild(t);
+      b.addEventListener("click", function () { lireMot(i); });
+      li.appendChild(b);
+      grille.appendChild(li);
+    });
+    $("hasard").hidden = !contenu.messages || contenu.messages.length < 2;
+  }
+
+  // Chaque mot a un identifiant : un mot ajouté plus tard apparaît bien comme « non lu ».
+  function idDe(i) {
+    var m = contenu.messages[i];
+    return m && m.id ? m.id : "n" + i;
+  }
+
+  function lireMot(i) {
+    var m = contenu.messages[i];
+    var id = idDe(i);
+    $("lettre-titre").textContent = m.titre || "";
+    $("lettre-texte").textContent = m.texte || "";
+    $("lettre-signe").textContent = contenu.de ? "— " + contenu.de : "";
+    var d = $("lettre");
+    if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");
+    d.querySelector(".papier").scrollTop = 0;
+    if (lus.indexOf(id) < 0) {
+      lus.push(id);
+      ecrire(CLE_LUS, JSON.stringify(lus));
+      var carte = document.querySelector('.carte[data-index="' + i + '"]');
+      if (carte) carte.classList.add("lue");
+    }
+  }
+
+  function fermer() {
+    var d = $("lettre");
+    if (typeof d.close === "function") d.close(); else d.removeAttribute("open");
+  }
+
+  $("formulaire").addEventListener("submit", function (e) {
+    e.preventDefault();
+    tenter(modeLien ? cleDuLien() : normaliser($("reponse").value), false);
+  });
+  $("fermer").addEventListener("click", fermer);
+  $("lettre").addEventListener("click", function (e) { if (e.target === this) fermer(); });
+  $("hasard").addEventListener("click", function () {
+    var n = contenu.messages.length;
+    var pasLus = [];
+    for (var i = 0; i < n; i++) if (lus.indexOf(idDe(i)) < 0) pasLus.push(i);
+    var choix = pasLus.length ? pasLus : Array.from({ length: n }, function (_, k) { return k; });
+    lireMot(choix[Math.floor(Math.random() * choix.length)]);
+  });
+  $("verrouiller").addEventListener("click", function () {
+    effacer(CLE_REPONSE);
+    location.reload();
+  });
+
+  // Au chargement : si cet appareil connaît déjà la clé, on ouvre directement.
+  (async function () {
+    var memo = lire(CLE_REPONSE);
+    if (memo) {
+      await tenter(memo, true);
+      if (contenu) return;
+    }
+    if (modeLien && !cleDuLien()) {
+      $("erreur").textContent = TEXTES.vide;
+      $("ouvrir").hidden = true;
+    }
+  })();
+})();
+</script>
+</body>
+</html>
